@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json.schemastore.org/nest-cli",
+  "collection": "@nestjs/schematics",
+  "sourceRoot": "apps/pulseforge/src",
+  "compilerOptions": {
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/pulseforge/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/pulseforge",
+  "projects": {
+    "database": {
+      "type": "library",
+      "root": "libs/database",
+      "entryFile": "index",
+      "sourceRoot": "libs/database/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/database/tsconfig.lib.json"
+      }
+    },
+    "gateway": {
+      "type": "application",
+      "root": "apps/gateway",
+      "entryFile": "main",
+      "sourceRoot": "apps/gateway/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/gateway/tsconfig.app.json"
+      }
+    },
+    "pulseforge": {
+      "type": "application",
+      "root": "apps/pulseforge",
+      "entryFile": "main",
+      "sourceRoot": "apps/pulseforge/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/pulseforge/tsconfig.app.json"
+      }
+    },
+    "queue": {
+      "type": "library",
+      "root": "libs/queue",
+      "entryFile": "index",
+      "sourceRoot": "libs/queue/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/queue/tsconfig.lib.json"
+      }
+    },
+    "types": {
+      "type": "library",
+      "root": "libs/types",
+      "entryFile": "index",
+      "sourceRoot": "libs/types/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/types/tsconfig.lib.json"
+      }
+    },
+    "worker-embedding": {
+      "type": "application",
+      "root": "apps/worker-embedding",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-embedding/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-embedding/tsconfig.app.json"
+      }
+    },
+    "worker-media": {
+      "type": "application",
+      "root": "apps/worker-media",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-media/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-media/tsconfig.app.json"
+      }
+    },
+    "worker-summary": {
+      "type": "application",
+      "root": "apps/worker-summary",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-summary/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-summary/tsconfig.app.json"
+      }
+    },
+    "worker-transcript": {
+      "type": "application",
+      "root": "apps/worker-transcript",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-transcript/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-transcript/tsconfig.app.json"
+      }
+    }
+  }
+}
