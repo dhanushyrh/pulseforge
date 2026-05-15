@@ -7,6 +7,7 @@ import CountryPage    from './pages/CountryPage';
 import QueuePage      from './pages/QueuePage';
 import SearchPage     from './pages/SearchPage';
 import React from 'react';
+import CreatorsPage from './components/CreatorsPage';
 
 export default function App() {
   return (
@@ -19,6 +20,8 @@ export default function App() {
           {/* <Route path="/type"    element={<TypePage />} /> */}
           <Route path="/search"  element={<SearchPage />} />
           <Route path="/queue"   element={<QueuePage />} />
+
+          <Route path="/creators" element={<CreatorsPage />} />
         </Route>
       </Routes>
     </BrowserRouter>

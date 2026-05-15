@@ -64,6 +64,15 @@
         "tsConfigPath": "apps/ui/tsconfig.app.json"
       }
     },
+    "worker-classifier": {
+      "type": "application",
+      "root": "apps/worker-classifier",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-classifier/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-classifier/tsconfig.app.json"
+      }
+    },
     "worker-embedding": {
       "type": "application",
       "root": "apps/worker-embedding",
@@ -73,6 +82,15 @@
         "tsConfigPath": "apps/worker-embedding/tsconfig.app.json"
       }
     },
+    "worker-insights": {
+      "type": "application",
+      "root": "apps/worker-insights",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-insights/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-insights/tsconfig.app.json"
+      }
+    },
     "worker-media": {
       "type": "application",
       "root": "apps/worker-media",
@@ -80,6 +98,15 @@
       "sourceRoot": "apps/worker-media/src",
       "compilerOptions": {
         "tsConfigPath": "apps/worker-media/tsconfig.app.json"
+      }
+    },
+    "worker-metadata": {
+      "type": "application",
+      "root": "apps/worker-metadata",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-metadata/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-metadata/tsconfig.app.json"
       }
     },
     "worker-summary": {

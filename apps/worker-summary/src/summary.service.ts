@@ -2,7 +2,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import Groq from 'groq-sdk';
 import { Job, Intelligence } from '@app/database';
+import type { VideoChapter } from '@app/queue';
 
 interface SummaryResult {
   summary:   string;
@@ -12,7 +14,8 @@ interface SummaryResult {
 
 @Injectable()
 export class SummaryService {
-  private readonly logger = new Logger(SummaryService.name);
+  private readonly logger    = new Logger(SummaryService.name);
+  private readonly groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
   constructor(
     @InjectRepository(Job)
@@ -22,87 +25,85 @@ export class SummaryService {
   ) {}
 
   async summarize(
-    jobId:        string,
-    transcriptId: string,
-    rawText:      string,
+    jobId:       string,
+    rawText:     string,
+    chapters:     VideoChapter[],
+    tags:         string[],
+    caption:      string | null,
+    creator:      string | null,
+    country:      string | null,
+    contentType:  string,
   ): Promise<void> {
     this.logger.log(`[${jobId}] Generating summary`);
-
-    const { summary, sentiment, entities } = await this.extractInsights(jobId, rawText);
-
-    // Update Intelligence record
-    await this.intelligenceRepo.update(
-      { jobId },
-      { summary, sentiment, entities },
+    const { summary, sentiment, entities } = await this.extractInsights(
+      jobId, rawText, chapters, tags, caption, creator, country, contentType,
     );
 
-    // Mark job complete
+    await this.intelligenceRepo.update({ jobId }, { summary, sentiment, entities });
     await this.jobRepo.update({ id: jobId }, { status: 'completed' });
     this.logger.log(`[${jobId}] Summary done → job completed`);
   }
 
-  // ── Insight Extraction ───────────────────────────────────
-
   private async extractInsights(
-    jobId:   string,
-    rawText: string,
+    jobId:       string,
+    rawText:     string,
+    chapters:    VideoChapter[],
+    tags:        string[],
+    caption:     string | null,
+    creator:     string | null,
+    country:     string | null,
+    contentType: string,
   ): Promise<SummaryResult> {
-    const excerpt = rawText.slice(0, 3000);
+    const chapterContext = chapters.length
+      ? `\nChapters: ${chapters.map(c => c.title).join(' · ')}`
+      : '';
+    const tagContext = tags.length
+      ? `\nTags: ${tags.slice(0, 10).join(', ')}`
+      : '';
 
-    const prompt = `
-You are an AI that summarizes social media video transcripts.
-Given the transcript below, return a JSON object with exactly these fields:
-- summary: 2-3 sentence summary of the content
-- sentiment: one of "positive", "neutral", or "negative"
-- entities: array of up to 10 key topics, people, or brands mentioned
+    const prompt = `You are a travel content analyst. Summarize this ${contentType} video and extract key topics.
+
+Context:
+- Creator: ${creator ?? 'unknown'}
+- Country/destination: ${country ?? 'unknown'}
+- Title/caption: ${caption ?? 'unknown'}${chapterContext}${tagContext}
 
 Transcript:
-${excerpt}
+${rawText.slice(0, 3500)}
 
-Respond ONLY with valid JSON. No markdown, no code blocks, no explanation.
-    `.trim();
+Return ONLY valid JSON with exactly these fields:
+{
+  "summary": "2-3 sentences covering the destination, what the creator did, and key highlights",
+  "sentiment": "positive" or "neutral" or "negative",
+  "entities": ["up to 10 key places, foods, activities, or brands mentioned"]
+}`;
 
     try {
-      const res = await fetch('http://localhost:8001/summarize', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ prompt }),
+      const completion = await this.groq.chat.completions.create({
+        model:           'llama-3.1-8b-instant',
+        temperature:     0,
+        response_format: { type: 'json_object' },
+        messages:        [{ role: 'user', content: prompt }],
       });
 
-      if (!res.ok) throw new Error(`Sidecar returned ${res.status}`);
+      const raw = (completion.choices[0].message.content ?? '').trim();
+      const match = raw.match(/\{[\s\S]*\}/);
+      if (!match) throw new Error('No JSON in response');
 
-      // Read body ONCE only
-      const data = await res.json() as SummaryResult;
-
+      const data = JSON.parse(match[0]) as SummaryResult;
       return {
         summary:   data.summary   ?? this.fallbackSummary(rawText),
         sentiment: data.sentiment ?? 'neutral',
-        entities:  data.entities  ?? [],
+        entities:  Array.isArray(data.entities) ? data.entities : [],
       };
 
     } catch (err) {
-      // Sidecar not available — use fallback
-      this.logger.warn(`[${jobId}] Summary sidecar unavailable, using fallback: ${err.message}`);
-      return this.fallback(rawText);
+      this.logger.warn(`[${jobId}] Gemini summary failed: ${err.message} — using fallback`);
+      return { summary: this.fallbackSummary(rawText), sentiment: 'neutral', entities: [] };
     }
   }
 
-  // ── Fallback (no sidecar needed) ─────────────────────────
-
-  private fallback(rawText: string): SummaryResult {
-    return {
-      summary:   this.fallbackSummary(rawText),
-      sentiment: 'neutral',
-      entities:  [],
-    };
-  }
-
   private fallbackSummary(rawText: string): string {
-    // Simple extractive summary — first 200 chars cleaned up
-    return rawText
-      .slice(0, 200)
-      .replace(/\s+/g, ' ')
-      .trim()
-      .concat('...');
+    return rawText.slice(0, 200).replace(/\s+/g, ' ').trim() + '...';
   }
 }

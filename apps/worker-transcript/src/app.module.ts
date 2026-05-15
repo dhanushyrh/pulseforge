@@ -27,6 +27,7 @@ import { TranscriptProcessor } from './transcript.processor';
       },
       { name: QUEUES.EMBEDDING },
       { name: QUEUES.SUMMARY },
+      { name: QUEUES.INSIGHTS },
     ),
     DatabaseModule,
     TypeOrmModule.forFeature(DB_ENTITIES),

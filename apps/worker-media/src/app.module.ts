@@ -19,7 +19,7 @@ import { MediaProcessor } from './media.processor';
     }),
     BullModule.registerQueue(
       { name: QUEUES.MEDIA },
-      { name: QUEUES.TRANSCRIPT },
+      { name: QUEUES.METADATA }, 
     ),
     DatabaseModule,
     TypeOrmModule.forFeature(DB_ENTITIES),

@@ -15,13 +15,15 @@ export class SummaryProcessor extends WorkerHost {
   }
 
   async process(job: Job<SummaryJobPayload>): Promise<void> {
-    const { jobId, transcriptId, rawText } = job.data;
+    const { jobId, rawText, chapters, tags, caption, creator, country, contentType } = job.data;
     this.logger.log(`[${jobId}] Starting summary`);
 
     try {
-      await this.summaryService.summarize(jobId, transcriptId, rawText);
-      this.logger.log(`[${jobId}] Summary complete`);
-
+      await this.summaryService.summarize(
+        jobId, rawText,
+        chapters ?? [], tags ?? [], caption ?? null, creator ?? null, country ?? null, contentType ?? 'vlog',
+      );
+      this.logger.log(`[${jobId}] Summary done`);
     } catch (err) {
       this.logger.error(`[${jobId}] Summary failed: ${err.message}`);
       throw err;

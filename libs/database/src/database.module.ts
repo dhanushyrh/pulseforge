@@ -5,8 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Job } from './entities/job.entity';
 import { MediaAsset } from './entities/media-asset.entity';
 import { Intelligence } from './entities/intelligence.entity';
+import { ContentInsights } from './entities/content-insights.entity';
 
-export const DB_ENTITIES = [Job, MediaAsset, Intelligence];
+export const DB_ENTITIES = [Job, MediaAsset, Intelligence, ContentInsights];
 
 @Module({
   imports: [

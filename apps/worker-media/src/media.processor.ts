@@ -5,7 +5,7 @@ import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import { Job } from 'bullmq';
 import { QUEUES, JOBS } from '@app/queue';
-import type { MediaJobPayload, TranscriptJobPayload } from '@app/queue';
+import type { MediaJobPayload, MetadataJobPayload } from '@app/queue';
 import { MediaService } from './media.service';
 
 @Processor(QUEUES.MEDIA, { concurrency: 1 })
@@ -14,8 +14,8 @@ export class MediaProcessor extends WorkerHost {
 
   constructor(
     private readonly mediaService: MediaService,
-    @InjectQueue(QUEUES.TRANSCRIPT)
-    private readonly transcriptQueue: Queue,
+    @InjectQueue(QUEUES.METADATA)              // ← changed from TRANSCRIPT
+    private readonly metadataQueue: Queue,
   ) {
     super();
   }
@@ -30,13 +30,14 @@ export class MediaProcessor extends WorkerHost {
 
       const { mediaId, storagePath } = await this.mediaService.downloadAndUpload(jobId, url);
 
-      const payload: TranscriptJobPayload = { jobId, mediaId, storagePath };
-      await this.transcriptQueue.add(JOBS.TRANSCRIPT, payload, {
+      // Push to METADATA queue next (not transcript directly)
+      const payload: MetadataJobPayload = { jobId, url, storagePath, mediaId };
+      await this.metadataQueue.add(JOBS.METADATA, payload, {
         attempts: 3,
         backoff: { type: 'exponential', delay: 3000 },
       });
 
-      this.logger.log(`[${jobId}] Media done → transcript queued`);
+      this.logger.log(`[${jobId}] Media done → metadata queued`);
 
     } catch (err) {
       this.logger.error(`[${jobId}] Media failed: ${err.message}`);

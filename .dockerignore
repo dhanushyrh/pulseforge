@@ -1,0 +1,12 @@
+node_modules
+dist
+apps/embedding-sidecar/venv
+apps/ui/node_modules
+**/*.log
+**/*.md
+.git
+.gitignore
+.env
+.env.*
+coverage
+.nyc_output

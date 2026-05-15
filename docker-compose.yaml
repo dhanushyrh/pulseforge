@@ -1,7 +1,35 @@
-# pulseforge/docker-compose.yml
+# pulseforge/docker-compose.yaml
 
+x-db-env: &db-env
+  DB_HOST: postgres
+  DB_PORT: 5432
+  DB_USER: pulseforge
+  DB_PASSWORD: pulseforge
+  DB_NAME: pulseforge
+
+x-redis-env: &redis-env
+  REDIS_HOST: redis
+  REDIS_PORT: 6379
+
+x-minio-env: &minio-env
+  MINIO_ENDPOINT: minio
+  MINIO_PORT: 9000
+  MINIO_ACCESS_KEY: minioadmin
+  MINIO_SECRET_KEY: minioadmin
+  MINIO_BUCKET: pulseforge-media
+
+x-infra-depends: &infra-depends
+  postgres:
+    condition: service_healthy
+  redis:
+    condition: service_healthy
+  minio:
+    condition: service_healthy
 
 services:
+
+  # ── Infrastructure ────────────────────────────────────────────
+
   postgres:
     image: postgres:16-alpine
     container_name: pulseforge_pg
@@ -50,7 +78,7 @@ services:
       MINIO_ROOT_PASSWORD: minioadmin
     ports:
       - '9000:9000'
-      - '9001:9001'   # MinIO Console UI
+      - '9001:9001'
     volumes:
       - minio_data:/data
     healthcheck:
@@ -58,6 +86,161 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  # ── Python sidecar (embeddings, summarization, classification, OCR) ──
+
+  embedding-sidecar:
+    build:
+      context: apps/embedding-sidecar
+      dockerfile: Dockerfile
+    container_name: pulseforge_sidecar
+    ports:
+      - '8001:8001'
+    environment:
+      PYTHONUNBUFFERED: '1'
+    restart: unless-stopped
+
+  # ── NestJS application services ───────────────────────────────
+
+  gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_gateway
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: gateway
+      GATEWAY_PORT: 3000
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
+    ports:
+      - '3000:3000'
+    depends_on:
+      <<: *infra-depends
+      embedding-sidecar:
+        condition: service_started
+    restart: unless-stopped
+
+  worker-media:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_media
+    environment:
+      <<: [*db-env, *redis-env, *minio-env]
+      APP_NAME: worker-media
+    depends_on:
+      <<: *infra-depends
+    restart: unless-stopped
+
+  worker-metadata:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_metadata
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: worker-metadata
+    depends_on:
+      <<: *infra-depends
+    restart: unless-stopped
+
+  worker-classifier:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_classifier
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: worker-classifier
+      EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
+    depends_on:
+      <<: *infra-depends
+      embedding-sidecar:
+        condition: service_started
+    restart: unless-stopped
+
+  worker-transcript:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: worker-transcript
+    container_name: pulseforge_worker_transcript
+    environment:
+      <<: [*db-env, *redis-env, *minio-env]
+      PYTHON_PATH: /usr/bin/python3
+      YT_DLP_PATH: /usr/local/bin/yt-dlp
+    depends_on:
+      <<: *infra-depends
+    restart: unless-stopped
+
+  worker-embedding:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_embedding
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: worker-embedding
+      QDRANT_HOST: qdrant
+      QDRANT_PORT: 6333
+      EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
+    depends_on:
+      <<: *infra-depends
+      qdrant:
+        condition: service_started
+      embedding-sidecar:
+        condition: service_started
+    restart: unless-stopped
+
+  worker-summary:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_summary
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: worker-summary
+      EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
+    depends_on:
+      <<: *infra-depends
+      embedding-sidecar:
+        condition: service_started
+    restart: unless-stopped
+
+  worker-insights:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: node-runtime
+    container_name: pulseforge_worker_insights
+    environment:
+      <<: [*db-env, *redis-env]
+      APP_NAME: worker-insights
+      EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
+    depends_on:
+      <<: *infra-depends
+      embedding-sidecar:
+        condition: service_started
+    restart: unless-stopped
+
+  ui:
+    build:
+      context: .
+      dockerfile: apps/ui/Dockerfile
+    container_name: pulseforge_ui
+    ports:
+      - '4000:80'
+    depends_on:
+      - gateway
+    restart: unless-stopped
 
 volumes:
   pg_data:

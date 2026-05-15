@@ -7,8 +7,9 @@ import { ExpressAdapter } from '@bull-board/express';
 import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { DatabaseModule } from '@app/database';
 import { QUEUES } from '@app/queue';
-import { IngestModule } from './ingest/ingest.module';
-import { SearchModule } from './search/search.module';
+import { IngestModule }  from './ingest/ingest.module';
+import { SearchModule }  from './search/search.module';
+import { ContentModule } from './content/content.module';   // ← add
 
 @Module({
   imports: [
@@ -21,20 +22,19 @@ import { SearchModule } from './search/search.module';
       },
     }),
 
-    // Register all queues so Bull Board can see them
     BullModule.registerQueue(
       { name: QUEUES.MEDIA },
+      { name: QUEUES.METADATA },  
+      { name: QUEUES.CLASSIFIER }, 
       { name: QUEUES.TRANSCRIPT },
       { name: QUEUES.EMBEDDING },
       { name: QUEUES.SUMMARY },
     ),
 
-    // Bull Board UI at /queues
-    BullBoardModule.forRoot({
-      route:   '/queues',
-      adapter: ExpressAdapter,
-    }),
+    BullBoardModule.forRoot({ route: '/queues', adapter: ExpressAdapter }),
     BullBoardModule.forFeature({ name: QUEUES.MEDIA,      adapter: BullMQAdapter }),
+    BullBoardModule.forFeature({ name: QUEUES.METADATA,   adapter: BullMQAdapter }),
+    BullBoardModule.forFeature({ name: QUEUES.CLASSIFIER, adapter: BullMQAdapter }),
     BullBoardModule.forFeature({ name: QUEUES.TRANSCRIPT, adapter: BullMQAdapter }),
     BullBoardModule.forFeature({ name: QUEUES.EMBEDDING,  adapter: BullMQAdapter }),
     BullBoardModule.forFeature({ name: QUEUES.SUMMARY,    adapter: BullMQAdapter }),
@@ -42,6 +42,7 @@ import { SearchModule } from './search/search.module';
     DatabaseModule,
     IngestModule,
     SearchModule,
+    ContentModule,   // ← add
   ],
 })
 export class AppModule {}

@@ -60,3 +60,19 @@ export const ingestUrl = async (params: {
   const { data } = await api.post('/ingest', params);
   return data;
 };
+
+export const getInsights = async (jobId: string) => {
+  const { data } = await api.get(`/content/${jobId}/insights`);
+  return data;
+};
+
+export const getCreators = async () => {
+  const { data } = await api.get('/content/creators');
+  return data as {
+    creator:      string;
+    count:        number;
+    avgConfidence: number;
+    countries:    string[];
+    contentTypes: string[];
+  }[];
+};

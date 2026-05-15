@@ -1,5 +1,7 @@
 // libs/database/src/entities/intelligence.entity.ts
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn } from 'typeorm';
+import {
+  Entity, PrimaryGeneratedColumn, Column, CreateDateColumn
+} from 'typeorm';
 
 @Entity('intelligence')
 export class Intelligence {
@@ -11,6 +13,9 @@ export class Intelligence {
 
   @Column({ type: 'text', nullable: true })
   rawText: string;
+
+  @Column({ type: 'text', nullable: true })
+  ocrText: string;
 
   @Column({ type: 'text', nullable: true })
   summary: string;

@@ -1,0 +1,26 @@
+# ── Web server ────────────────────────────────────────────────
+fastapi==0.136.1
+uvicorn[standard]==0.46.0
+pydantic==2.13.4
+
+# ── Embedding model (ONNX runtime — no GPU required) ──────────
+transformers==5.8.1
+onnxruntime==1.23.2
+huggingface-hub==1.14.0
+tokenizers==0.22.2
+numpy==2.3.5
+pillow==12.2.0
+
+# ── Summarization / classification LLM ────────────────────────
+# Qwen2.5-0.5B runs on CPU via the transformers pipeline
+accelerate
+
+# ── OCR ───────────────────────────────────────────────────────
+opencv-python-headless==4.13.0.92
+rapidfuzz==3.14.5
+pytesseract              # Linux fallback — needs system tesseract-ocr
+# macOS uses Apple Vision (pyobjc), installed separately on dev machines:
+#   pip install pyobjc-framework-Vision
+
+# ── Misc ──────────────────────────────────────────────────────
+requests==2.34.1

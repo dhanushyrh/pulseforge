@@ -8,11 +8,12 @@ import styles from './Layout.module.css';
 import React from 'react';
 
 const NAV = [
-  { to: '/browse',  icon: '⊞', label: 'Browse'   },
-  { to: '/country', icon: '🌍', label: 'Countries' },
-  { to: '/type',    icon: '▶',  label: 'By type'   },
-  { to: '/search',  icon: '⌕',  label: 'Search'    },
-  { to: '/queue',   icon: '⟳',  label: 'Queue'     },
+  { to: '/browse',   icon: '⊞', label: 'Browse'   },
+  { to: '/country',  icon: '🌍', label: 'Countries' },
+  { to: '/type',     icon: '▶',  label: 'By type'   },
+  { to: '/creators', icon: '👤', label: 'Creators'  },  // ← new
+  { to: '/search',   icon: '⌕',  label: 'Search'    },
+  { to: '/queue',    icon: '⟳',  label: 'Queue'     },
 ];
 
 export default function Layout() {
