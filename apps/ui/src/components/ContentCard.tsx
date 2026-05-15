@@ -3,11 +3,27 @@ import React from 'react';
 import type { ContentItem } from '../types';
 import styles from './ContentCard.module.css';
 
-const TYPE_COLORS: Record<string, string> = {
-  reel:    'var(--purple-50)',
-  vlog:    'var(--teal-50)',
-  short:   'var(--amber-50)',
-  unknown: '#f1f0f0',
+const TYPE_GRADIENT: Record<string, string> = {
+  reel:    'linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%)',
+  vlog:    'linear-gradient(135deg, #0369A1 0%, #38BDF8 100%)',
+  short:   'linear-gradient(135deg, #B45309 0%, #FBBF24 100%)',
+  unknown: 'linear-gradient(135deg, #374151 0%, #9CA3AF 100%)',
+};
+
+const TYPE_ICON: Record<string, string> = {
+  reel:    '📱',
+  vlog:    '🎬',
+  short:   '▶',
+  unknown: '🎞',
+};
+
+const STATUS_COLOR: Record<string, string> = {
+  completed:  '#22C55E',
+  processing: '#F59E0B',
+  failed:     '#EF4444',
+  queued:     '#60A5FA',
+  not_travel: '#9CA3AF',
+  pending:    '#9CA3AF',
 };
 
 export default function ContentCard({
@@ -23,16 +39,19 @@ export default function ContentCard({
     <div className={styles.card} onClick={() => onClick(item)}>
       <div
         className={styles.thumb}
-        style={{ background: TYPE_COLORS[item.contentType] ?? '#f1f0f0' }}
+        style={{ background: TYPE_GRADIENT[item.contentType] ?? TYPE_GRADIENT.unknown }}
       >
+        <div className={styles.thumbGlow} />
         <span className={styles.thumbIcon}>
-          {item.contentType === 'reel'  ? '📱' :
-           item.contentType === 'vlog'  ? '🎬' :
-           item.contentType === 'short' ? '▶'  : '🎞'}
+          {TYPE_ICON[item.contentType] ?? '🎞'}
         </span>
         <span className={styles.thumbBadge}>
           {item.countryCode ? countryFlag(item.countryCode) : '🌐'} {item.contentType}
         </span>
+        <span
+          className={styles.statusDot}
+          style={{ background: STATUS_COLOR[item.status] ?? '#ccc' }}
+        />
       </div>
 
       <div className={styles.body}>
@@ -59,10 +78,7 @@ export default function ContentCard({
 
         <div className={styles.confRow}>
           <div className={styles.confTrack}>
-            <div
-              className={styles.confFill}
-              style={{ width: `${conf}%` }}
-            />
+            <div className={styles.confFill} style={{ width: `${conf}%` }} />
           </div>
           <span className={styles.confLabel}>{conf}%</span>
         </div>
@@ -73,11 +89,11 @@ export default function ContentCard({
 
 function Tag({ type }: { type: string }) {
   const map: Record<string, { bg: string; color: string }> = {
-    reel:    { bg: 'var(--purple-50)', color: 'var(--purple-800)' },
-    vlog:    { bg: 'var(--teal-50)',   color: 'var(--teal-700)' },
-    short:   { bg: 'var(--amber-50)',  color: 'var(--amber-700)' },
-    travel:  { bg: 'var(--green-50)',  color: 'var(--green-700)' },
-    unknown: { bg: '#f1f0f0',          color: 'var(--text-2)' },
+    reel:    { bg: '#F3F0FF', color: '#6D28D9' },
+    vlog:    { bg: '#EFF6FF', color: '#1D4ED8' },
+    short:   { bg: '#FFFBEB', color: '#B45309' },
+    travel:  { bg: '#F0FDFB', color: '#0F766E' },
+    unknown: { bg: '#F9FAFB', color: '#4B5563' },
   };
   const s = map[type] ?? map.unknown;
   return (
@@ -87,7 +103,9 @@ function Tag({ type }: { type: string }) {
       fontSize:     10,
       padding:      '2px 8px',
       borderRadius: 20,
-      fontWeight:   500,
+      fontWeight:   600,
+      fontFamily:   'var(--font-ui)',
+      letterSpacing: '0.01em',
     }}>
       {type === 'travel' ? '✓ travel' : type}
     </span>

@@ -4,12 +4,17 @@ x-db-env: &db-env
   DB_HOST: postgres
   DB_PORT: 5432
   DB_USER: pulseforge
-  DB_PASSWORD: pulseforge
+  DB_PASS: pulseforge
   DB_NAME: pulseforge
 
 x-redis-env: &redis-env
   REDIS_HOST: redis
   REDIS_PORT: 6379
+
+x-ai-env: &ai-env
+  GROQ_API_KEY: ${GROQ_API_KEY}
+  GEMINI_API_KEY: ${GEMINI_API_KEY}
+  GOOGLE_PLACES_KEY: ${GOOGLE_PLACES_KEY}
 
 x-minio-env: &minio-env
   MINIO_ENDPOINT: minio
@@ -127,7 +132,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: node-runtime
+      target: node-runtime-ytdlp
     container_name: pulseforge_worker_media
     environment:
       <<: [*db-env, *redis-env, *minio-env]
@@ -140,7 +145,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      target: node-runtime
+      target: node-runtime-ytdlp
     container_name: pulseforge_worker_metadata
     environment:
       <<: [*db-env, *redis-env]
@@ -156,7 +161,7 @@ services:
       target: node-runtime
     container_name: pulseforge_worker_classifier
     environment:
-      <<: [*db-env, *redis-env]
+      <<: [*db-env, *redis-env, *ai-env]
       APP_NAME: worker-classifier
       EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
     depends_on:
@@ -206,7 +211,7 @@ services:
       target: node-runtime
     container_name: pulseforge_worker_summary
     environment:
-      <<: [*db-env, *redis-env]
+      <<: [*db-env, *redis-env, *ai-env]
       APP_NAME: worker-summary
       EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
     depends_on:
@@ -222,7 +227,7 @@ services:
       target: node-runtime
     container_name: pulseforge_worker_insights
     environment:
-      <<: [*db-env, *redis-env]
+      <<: [*db-env, *redis-env, *ai-env]
       APP_NAME: worker-insights
       EMBEDDING_SIDECAR_URL: http://embedding-sidecar:8001
     depends_on:

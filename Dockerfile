@@ -36,6 +36,18 @@ CMD ["sh", "-c", "node dist/apps/${APP_NAME}/main.js"]
 
 
 # ════════════════════════════════════════════════════════════════
+# Stage 2b — Node runtime + yt-dlp (worker-media, worker-metadata)
+# ════════════════════════════════════════════════════════════════
+FROM node-runtime AS node-runtime-ytdlp
+
+RUN apt-get update && apt-get install -y --no-install-recommends python3 python3-pip ffmpeg \
+    && python3 -m pip install --no-cache-dir --break-system-packages yt-dlp \
+    && rm -rf /var/lib/apt/lists/*
+
+ENV YT_DLP_PATH=/usr/local/bin/yt-dlp
+
+
+# ════════════════════════════════════════════════════════════════
 # Stage 3 — Transcript worker (Node + Python + ffmpeg + tesseract)
 #
 #   Needs: faster-whisper (Whisper), yt-dlp (video download),

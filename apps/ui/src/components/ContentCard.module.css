@@ -1,18 +1,149 @@
 /* apps/ui/src/components/ContentCard.module.css */
-.card        { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
-.card:hover  { border-color: var(--border-md); transform: translateY(-1px); }
-.thumb       { height: 88px; display: flex; align-items: center; justify-content: center; position: relative; }
-.thumbIcon   { font-size: 26px; opacity: .7; }
-.thumbBadge  { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 10px; }
-.body        { padding: 10px 12px; }
-.creator     { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
-.avatar      { width: 18px; height: 18px; border-radius: 50%; background: var(--purple-50); color: var(--purple-800); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
-.creatorName { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.platform    { font-size: 10px; color: var(--text-3); flex-shrink: 0; }
-.caption     { font-size: 12px; font-weight: 500; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.footer      { display: flex; align-items: center; justify-content: space-between; }
-.tags        { display: flex; gap: 4px; flex-wrap: wrap; }
-.confRow     { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
-.confTrack   { flex: 1; height: 3px; background: var(--bg); border-radius: 2px; overflow: hidden; }
-.confFill    { height: 100%; background: #639922; border-radius: 2px; transition: width .3s; }
-.confLabel   { font-size: 10px; color: var(--text-3); white-space: nowrap; }
+
+.card {
+  background: #FFFFFF;
+  border: none;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+  box-shadow: var(--shadow-sm);
+}
+.card:hover {
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+/* Thumbnail */
+.thumb {
+  height: 116px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+.thumbGlow {
+  position: absolute;
+  inset: 0;
+  opacity: 0.18;
+  background: radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.6) 0%, transparent 70%);
+  pointer-events: none;
+}
+.thumbIcon {
+  font-size: 30px;
+  opacity: 0.85;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.25));
+  z-index: 1;
+}
+.thumbBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(6px);
+  color: #fff;
+  font-size: 10px;
+  font-family: var(--font-ui);
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: 20px;
+  z-index: 2;
+}
+.statusDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  z-index: 2;
+  box-shadow: 0 0 0 2px rgba(255,255,255,0.3);
+}
+
+/* Body */
+.body { padding: 11px 13px 12px; }
+
+.creator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.avatar {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: #F0FDFB;
+  color: #0F766E;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  font-weight: 700;
+  font-family: var(--font-ui);
+  flex-shrink: 0;
+}
+.creatorName {
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--text-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+.platform {
+  font-size: 10px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  font-family: var(--font-ui);
+}
+
+.caption {
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.45;
+  margin-bottom: 8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-1);
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+.tags { display: flex; gap: 4px; flex-wrap: wrap; }
+
+/* Confidence bar */
+.confRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+}
+.confTrack {
+  flex: 1;
+  height: 3px;
+  background: rgba(0,0,0,0.06);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.confFill {
+  height: 100%;
+  background: linear-gradient(90deg, #0D9488, #2DD4BF);
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+.confLabel {
+  font-size: 10px;
+  color: var(--text-3);
+  white-space: nowrap;
+  font-family: var(--font-ui);
+  font-weight: 500;
+}

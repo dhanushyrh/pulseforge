@@ -8,12 +8,11 @@ import styles from './Layout.module.css';
 import React from 'react';
 
 const NAV = [
-  { to: '/browse',   icon: '⊞', label: 'Browse'   },
-  { to: '/country',  icon: '🌍', label: 'Countries' },
-  { to: '/type',     icon: '▶',  label: 'By type'   },
-  { to: '/creators', icon: '👤', label: 'Creators'  },  // ← new
-  { to: '/search',   icon: '⌕',  label: 'Search'    },
-  { to: '/queue',    icon: '⟳',  label: 'Queue'     },
+  { to: '/browse',   icon: '⊞',  label: 'Browse'    },
+  { to: '/country',  icon: '🌍', label: 'Countries'  },
+  { to: '/creators', icon: '◎',  label: 'Creators'   },
+  { to: '/search',   icon: '⌕',  label: 'Search'     },
+  { to: '/queue',    icon: '↻',  label: 'Queue'      },
 ];
 
 export default function Layout() {
@@ -29,14 +28,25 @@ export default function Layout() {
       <aside className={styles.sidebar}>
         <div className={styles.logo}>
           <span className={styles.logoBolt}>⚡</span>
-          <span>PulseForge</span>
+          PulseForge
         </div>
 
         <div className={styles.statsBlock}>
-          <StatPill label="Total"      value={stats?.total      ?? '—'} />
-          <StatPill label="Travel"     value={stats?.travel     ?? '—'} color="green" />
-          <StatPill label="Processing" value={stats?.processing ?? '—'} color="amber" />
+          <div className={styles.statPill}>
+            <span className={styles.statLabel}>Videos</span>
+            <span className={styles.statValue}>{stats?.total ?? '—'}</span>
+          </div>
+          <div className={styles.statPill}>
+            <span className={styles.statLabel}>Travel</span>
+            <span className={`${styles.statValue} ${styles.green}`}>{stats?.travel ?? '—'}</span>
+          </div>
+          <div className={styles.statPill}>
+            <span className={styles.statLabel}>Processing</span>
+            <span className={`${styles.statValue} ${styles.amber}`}>{stats?.processing ?? '—'}</span>
+          </div>
         </div>
+
+        <div className={styles.divider} />
 
         <nav className={styles.nav}>
           {NAV.map(n => (
@@ -66,27 +76,6 @@ export default function Layout() {
       </main>
 
       {showIngest && <IngestModal onClose={() => setShowIngest(false)} />}
-    </div>
-  );
-}
-
-function StatPill({ label, value, color = 'default' }: {
-  label: string; value: number | string; color?: string;
-}) {
-  const colors: Record<string, string> = {
-    default: '#f1efe8',
-    green:   '#eaf3de',
-    amber:   '#faeeda',
-  };
-  return (
-    <div style={{
-      background:   colors[color],
-      borderRadius: 'var(--radius-md)',
-      padding:      '8px 10px',
-      marginBottom: 6,
-    }}>
-      <div style={{ fontSize: 11, color: 'var(--text-3)', textTransform: 'uppercase', letterSpacing: '.04em' }}>{label}</div>
-      <div style={{ fontSize: 20, fontWeight: 500 }}>{value}</div>
     </div>
   );
 }

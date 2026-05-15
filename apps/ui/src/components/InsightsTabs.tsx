@@ -54,9 +54,9 @@ function OverviewTab({ item, conf }: { item: ContentItem; conf: number }) {
       <SectionLabel>Travel confidence</SectionLabel>
       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
         <div style={{ flex:1, height:5, background:'var(--bg)', borderRadius:3, overflow:'hidden' }}>
-          <div style={{ height:'100%', width:`${conf}%`, background:'#639922', borderRadius:3 }} />
+          <div style={{ height:'100%', width:`${conf}%`, background:'linear-gradient(90deg,#0D9488,#2DD4BF)', borderRadius:3 }} />
         </div>
-        <span style={{ fontSize:12, fontWeight:500, color:'#3B6D11' }}>{conf}%</span>
+        <span style={{ fontSize:12, fontWeight:600, color:'#0F766E', fontFamily:'var(--font-ui)' }}>{conf}%</span>
       </div>
     </div>
   );
@@ -139,7 +139,7 @@ function BudgetTab({ budget, currency, total }: { budget: any[]; currency: strin
             <div>
               <div style={{ fontSize:12, color:'var(--text-2)', textTransform:'capitalize' }}>{b.category}</div>
               <div style={{ height:3, background:'var(--bg)', borderRadius:2, overflow:'hidden', marginTop:4, width:100 }}>
-                <div style={{ height:'100%', width:`${pct}%`, background:'#534AB7', borderRadius:2 }} />
+                <div style={{ height:'100%', width:`${pct}%`, background:'linear-gradient(90deg,#0D9488,#2DD4BF)', borderRadius:2 }} />
               </div>
             </div>
             <div style={{ fontSize:12, fontWeight:500 }}>{b.currency} {b.amount}</div>
@@ -150,7 +150,7 @@ function BudgetTab({ budget, currency, total }: { budget: any[]; currency: strin
       {total > 0 && (
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', paddingTop:10, marginTop:4, borderTop:'0.5px solid var(--border)' }}>
           <span style={{ fontSize:12, fontWeight:500 }}>Est. total / day</span>
-          <span style={{ fontSize:15, fontWeight:500, color:'#534AB7' }}>
+          <span style={{ fontSize:15, fontWeight:700, color:'#0D9488', fontFamily:'var(--font-ui)' }}>
             ~${Math.round(total)} USD
           </span>
         </div>
