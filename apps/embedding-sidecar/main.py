@@ -1,5 +1,5 @@
 # apps/embedding-sidecar/main.py
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from transformers import AutoTokenizer, pipeline
 from huggingface_hub import hf_hub_download
@@ -17,12 +17,17 @@ onnx_path = hf_hub_download(repo_id=MODEL_ID, filename="onnx/model.onnx")
 session   = ort.InferenceSession(onnx_path)
 
 # ── Summarization pipeline (lightweight, CPU) ────────────────
-summarizer = pipeline(
-    "text-generation",
-    model    = "Qwen/Qwen2.5-0.5B-Instruct",   # ~1GB, runs on CPU
-    device   = -1,                               # -1 = CPU
-    max_new_tokens = 300,
-)
+summarizer = None
+summarizer_error = None
+try:
+    summarizer = pipeline(
+        "text-generation",
+        model    = "Qwen/Qwen2.5-0.5B-Instruct",   # ~1GB, runs on CPU
+        device   = -1,                               # -1 = CPU
+        max_new_tokens = 300,
+    )
+except Exception as e:
+    summarizer_error = str(e)
 
 # ── Helpers ──────────────────────────────────────────────────
 def mean_pooling(token_embeddings, attention_mask):
@@ -67,6 +72,9 @@ def embed_batch(req: EmbedBatchRequest):
 @app.post("/summarize")
 def summarize(req: SummarizeRequest):
     import json, re
+    if summarizer is None:
+        raise HTTPException(status_code=503, detail={"error": "summarizer unavailable", "reason": summarizer_error})
+
     output = summarizer(req.prompt, do_sample=False)[0]["generated_text"]
 
     # Extract JSON from model output

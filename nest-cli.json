@@ -55,6 +55,15 @@
         "tsConfigPath": "libs/types/tsconfig.lib.json"
       }
     },
+    "ui": {
+      "type": "application",
+      "root": "apps/ui",
+      "entryFile": "main",
+      "sourceRoot": "apps/ui/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/ui/tsconfig.app.json"
+      }
+    },
     "worker-embedding": {
       "type": "application",
       "root": "apps/worker-embedding",

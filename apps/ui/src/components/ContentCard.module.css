@@ -1,0 +1,18 @@
+/* apps/ui/src/components/ContentCard.module.css */
+.card        { background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-lg); overflow: hidden; cursor: pointer; transition: border-color .15s, transform .1s; }
+.card:hover  { border-color: var(--border-md); transform: translateY(-1px); }
+.thumb       { height: 88px; display: flex; align-items: center; justify-content: center; position: relative; }
+.thumbIcon   { font-size: 26px; opacity: .7; }
+.thumbBadge  { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,0.5); color: #fff; font-size: 10px; padding: 2px 7px; border-radius: 10px; }
+.body        { padding: 10px 12px; }
+.creator     { display: flex; align-items: center; gap: 5px; margin-bottom: 5px; }
+.avatar      { width: 18px; height: 18px; border-radius: 50%; background: var(--purple-50); color: var(--purple-800); display: flex; align-items: center; justify-content: center; font-size: 9px; font-weight: 600; flex-shrink: 0; }
+.creatorName { font-size: 11px; color: var(--text-2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.platform    { font-size: 10px; color: var(--text-3); flex-shrink: 0; }
+.caption     { font-size: 12px; font-weight: 500; line-height: 1.4; margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.footer      { display: flex; align-items: center; justify-content: space-between; }
+.tags        { display: flex; gap: 4px; flex-wrap: wrap; }
+.confRow     { display: flex; align-items: center; gap: 6px; margin-top: 7px; }
+.confTrack   { flex: 1; height: 3px; background: var(--bg); border-radius: 2px; overflow: hidden; }
+.confFill    { height: 100%; background: #639922; border-radius: 2px; transition: width .3s; }
+.confLabel   { font-size: 10px; color: var(--text-3); white-space: nowrap; }
