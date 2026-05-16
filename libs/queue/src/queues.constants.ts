@@ -6,7 +6,8 @@ export const QUEUES = {
   TRANSCRIPT: 'transcript',
   EMBEDDING:  'embedding',
   SUMMARY:    'summary',
-  INSIGHTS:   'insights',    // ← new
+  INSIGHTS:   'insights',
+  GEOCODE:    'geocode',
 } as const;
 
 export const JOBS = {
@@ -16,5 +17,6 @@ export const JOBS = {
   TRANSCRIPT: 'transcript.process',
   EMBEDDING:  'embedding.process',
   SUMMARY:    'summary.process',
-  INSIGHTS:   'insights.process',  // ← new
+  INSIGHTS:   'insights.process',
+  GEOCODE:    'geocode.process',
 } as const;

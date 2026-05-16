@@ -45,6 +45,7 @@ export interface TranscriptJobPayload {
   description: string | null;
   creator:     string | null;
   country:     string | null;
+  countryCode: string | null;
   contentType: string;
 }
 
@@ -52,6 +53,12 @@ export interface EmbeddingJobPayload {
   jobId:        string;
   transcriptId: string;
   rawText:      string;
+  userId:       string;
+  caption:      string | null;
+  description:  string | null;
+  countryCode:  string | null;
+  contentType:  string;
+  creator:      string | null;
 }
 
 export interface SummaryJobPayload {
@@ -76,4 +83,12 @@ export interface InsightsJobPayload {
   tags:         string[];
   caption:      string | null;
   creator:      string | null;
+}
+
+export interface GeocodeJobPayload {
+  tripStopId: string;
+  tripId:     string;
+  name:       string;
+  country:    string;
+  city:       string | null;
 }

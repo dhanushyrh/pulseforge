@@ -2,14 +2,14 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { BullModule } from '@nestjs/bullmq';
-import { Job } from '@app/database';
+import { Job, IngestUsage } from '@app/database';
 import { QUEUES } from '@app/queue';
 import { IngestController } from './ingest.controller';
 import { IngestService } from './ingest.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Job]),
+    TypeOrmModule.forFeature([Job, IngestUsage]),
     BullModule.registerQueue({ name: QUEUES.MEDIA }),
   ],
   controllers: [IngestController],

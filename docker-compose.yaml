@@ -16,6 +16,13 @@ x-ai-env: &ai-env
   GEMINI_API_KEY: ${GEMINI_API_KEY}
   GOOGLE_PLACES_KEY: ${GOOGLE_PLACES_KEY}
 
+x-auth-env: &auth-env
+  JWT_ACCESS_SECRET: ${JWT_ACCESS_SECRET}
+  JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+  JWT_ACCESS_EXPIRES: ${JWT_ACCESS_EXPIRES:-15m}
+  JWT_REFRESH_EXPIRES: ${JWT_REFRESH_EXPIRES:-7d}
+  BCRYPT_ROUNDS: ${BCRYPT_ROUNDS:-12}
+
 x-minio-env: &minio-env
   MINIO_ENDPOINT: minio
   MINIO_PORT: 9000
@@ -114,7 +121,7 @@ services:
       target: node-runtime
     container_name: pulseforge_gateway
     environment:
-      <<: [*db-env, *redis-env]
+      <<: [*db-env, *redis-env, *auth-env]
       APP_NAME: gateway
       GATEWAY_PORT: 3000
       QDRANT_HOST: qdrant

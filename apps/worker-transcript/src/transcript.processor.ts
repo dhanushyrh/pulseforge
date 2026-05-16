@@ -2,18 +2,21 @@
 import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import type { Queue } from 'bullmq';
 import { Job } from 'bullmq';
 import { QUEUES, JOBS } from '@app/queue';
 import type { TranscriptJobPayload, EmbeddingJobPayload, SummaryJobPayload, InsightsJobPayload } from '@app/queue';
+import { Job as JobEntity } from '@app/database';
 import { TranscriptService } from './transcript.service';
 
 @Processor(
   QUEUES.TRANSCRIPT,
   {
     concurrency: 1,
-    lockDuration: 300_000,      // ← 5 minutes (Whisper can be slow)
-    lockRenewTime: 60_000,      // ← renew lock every 60s
+    lockDuration: 300_000,
+    lockRenewTime: 60_000,
   }
 )
 export class TranscriptProcessor extends WorkerHost {
@@ -21,6 +24,8 @@ export class TranscriptProcessor extends WorkerHost {
 
   constructor(
     private readonly transcriptService: TranscriptService,
+    @InjectRepository(JobEntity)
+    private readonly jobRepo: Repository<JobEntity>,
     @InjectQueue(QUEUES.EMBEDDING) private readonly embeddingQueue: Queue,
     @InjectQueue(QUEUES.SUMMARY)   private readonly summaryQueue:   Queue,
     @InjectQueue(QUEUES.INSIGHTS)  private readonly insightsQueue:  Queue,
@@ -29,11 +34,10 @@ export class TranscriptProcessor extends WorkerHost {
   }
 
   async process(job: Job<TranscriptJobPayload>): Promise<void> {
-    const { jobId, storagePath, url, chapters, tags, caption, description, creator, country, contentType } = job.data;
+    const { jobId, storagePath, url, chapters, tags, caption, description, creator, country, countryCode, contentType } = job.data;
     this.logger.log(`[${jobId}] Starting transcription`);
 
     try {
-      // Extend lock manually before heavy Whisper + OCR calls
       await job.extendLock(job.token!, 300_000);
 
       const { transcriptId, rawText } = await this.transcriptService.transcribe(
@@ -43,7 +47,22 @@ export class TranscriptProcessor extends WorkerHost {
         description ?? null,
       );
 
-      const embeddingPayload: EmbeddingJobPayload = { jobId, transcriptId, rawText };
+      // Fetch userId from DB — not propagated through the classifier chain
+      const jobRecord = await this.jobRepo.findOne({ where: { id: jobId } });
+      const userId = jobRecord?.userId ?? '';
+
+      const embeddingPayload: EmbeddingJobPayload = {
+        jobId,
+        transcriptId,
+        rawText,
+        userId,
+        caption:     caption     ?? null,
+        description: description ?? null,
+        countryCode: countryCode ?? null,
+        contentType: contentType ?? 'vlog',
+        creator:     creator     ?? null,
+      };
+
       const summaryPayload: SummaryJobPayload = {
         jobId, transcriptId, rawText,
         chapters:    chapters    ?? [],
@@ -53,7 +72,8 @@ export class TranscriptProcessor extends WorkerHost {
         country:     country     ?? null,
         contentType: contentType ?? 'vlog',
       };
-      const insightsPayload:  InsightsJobPayload  = {
+
+      const insightsPayload: InsightsJobPayload = {
         jobId, transcriptId, rawText,
         country:     country     ?? null,
         contentType: contentType ?? 'vlog',

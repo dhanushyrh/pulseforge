@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import Groq from 'groq-sdk';
-import { ContentInsights } from '@app/database';
+import { ContentInsights, Creator, Job } from '@app/database';
 import type {
   StayItem, PlaceItem, FoodItem,
   BudgetItem, ItineraryDay, ItineraryItem,
@@ -29,6 +29,10 @@ export class InsightsService {
   constructor(
     @InjectRepository(ContentInsights)
     private readonly insightsRepo: Repository<ContentInsights>,
+    @InjectRepository(Job)
+    private readonly jobRepo: Repository<Job>,
+    @InjectRepository(Creator)
+    private readonly creatorRepo: Repository<Creator>,
   ) {}
 
   async extract(
@@ -81,6 +85,30 @@ export class InsightsService {
         `commute:${itemCounts.commute ?? 0} stay:${itemCounts.stay ?? 0} ` +
         `activity:${itemCounts.activity ?? 0} food:${itemCounts.food ?? 0}`
       );
+
+      // Refresh creator topEntities with place/activity names from this video
+      const entityNames = Array.from(new Set(
+        enriched.flatMap(i => [i.name, i.place].filter(Boolean) as string[])
+      )).slice(0, 10);
+
+      if (entityNames.length > 0) {
+        const jobRecord = await this.jobRepo.findOne({ where: { id: jobId } });
+        if (jobRecord?.creator) {
+          const creatorRecord = await this.creatorRepo.findOne({
+            where: { handle: jobRecord.creator },
+          });
+          if (creatorRecord) {
+            const merged = Array.from(new Set([
+              ...(creatorRecord.topEntities ?? []),
+              ...entityNames,
+            ])).slice(0, 20);
+            await this.creatorRepo.update(
+              { handle: jobRecord.creator },
+              { topEntities: merged },
+            );
+          }
+        }
+      }
 
     } catch (err) {
       this.logger.warn(`[${jobId}] Insights extraction failed: ${err.message} — saving empty`);

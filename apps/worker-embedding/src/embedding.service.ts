@@ -6,10 +6,10 @@ import { QdrantClient } from '@qdrant/js-client-rest';
 import { v4 as uuidv4 } from 'uuid';
 import { Job } from '@app/database';
 
-const COLLECTION     = 'pulse_memory';
-const VECTOR_SIZE    = 384;   // all-MiniLM-L6-v2 output dim
-const CHUNK_SIZE     = 500;   // characters per chunk
-const CHUNK_OVERLAP  = 50;
+const COLLECTION    = 'pulse_memory';
+const VECTOR_SIZE   = 384;
+const CHUNK_SIZE    = 500;
+const CHUNK_OVERLAP = 50;
 
 @Injectable()
 export class EmbeddingService {
@@ -35,35 +35,105 @@ export class EmbeddingService {
       });
       this.logger.log(`Created Qdrant collection: ${COLLECTION}`);
     }
+
+    const indexFields: Array<{ name: string; schema: 'keyword' | 'bool' }> = [
+      { name: 'user_id',    schema: 'keyword' },
+      { name: 'chunk_type', schema: 'keyword' },
+      { name: 'country',    schema: 'keyword' },
+      { name: 'creator',    schema: 'keyword' },
+      { name: 'is_travel',  schema: 'bool' },
+    ];
+
+    for (const { name, schema } of indexFields) {
+      try {
+        await this.qdrant.createPayloadIndex(COLLECTION, {
+          field_name:   name,
+          field_schema: schema,
+        });
+      } catch {
+        // idempotent — index already exists
+      }
+    }
   }
 
-  async embedAndStore(jobId: string, transcriptId: string, rawText: string) {
+  async embedAndStore(
+    jobId:       string,
+    transcriptId: string,
+    rawText:     string,
+    userId:      string,
+    caption:     string | null,
+    description: string | null,
+    country:     string | null,
+    countryCode: string | null,
+    platform:    string,
+    contentType: string,
+    creator:     string | null,
+  ) {
     await this.ensureCollection();
 
-    const chunks  = this.chunkText(rawText);
-    this.logger.log(`[${jobId}] Embedding ${chunks.length} chunks`);
+    const basePayload = {
+      job_id:       jobId,
+      user_id:      userId,
+      country:      country      ?? null,
+      country_code: countryCode  ?? null,
+      creator:      creator      ?? null,
+      platform,
+      content_type: contentType,
+      is_travel:    true,
+    };
 
-    const points = await Promise.all(
-      chunks.map(async (chunk, i) => {
-        const vector = await this.getEmbedding(chunk.text);
-        return {
-          id:      uuidv4(),
-          vector,
-          payload: {
-            job_id:          jobId,
-            transcript_id:   transcriptId,
-            text_chunk:      chunk.text,
-            chunk_index:     i,
-            timestamp_start: chunk.charStart,
-            metadata: {
-              platform: await this.getJobPlatform(jobId),
-            },
-          },
-        };
-      })
-    );
+    const points: Array<{ id: string; vector: number[]; payload: Record<string, unknown> }> = [];
 
-    // Upsert in batches of 100
+    // ── Caption (single point) ──────────────────────────────
+    if (caption && caption.length > 0) {
+      const vector = await this.getEmbedding(caption);
+      points.push({
+        id: uuidv4(),
+        vector,
+        payload: {
+          ...basePayload,
+          chunk_type:  'caption',
+          text_chunk:  caption,
+          chunk_index: 0,
+        },
+      });
+    }
+
+    // ── Description (single point, first 1000 chars) ────────
+    if (description && description.length > 10) {
+      const vector = await this.getEmbedding(description.slice(0, 1000));
+      points.push({
+        id: uuidv4(),
+        vector,
+        payload: {
+          ...basePayload,
+          chunk_type:  'description',
+          text_chunk:  description.slice(0, 1000),
+          chunk_index: 0,
+        },
+      });
+    }
+
+    // ── Transcript chunks ───────────────────────────────────
+    const chunks = this.chunkText(rawText);
+    this.logger.log(`[${jobId}] Embedding ${chunks.length} transcript chunks`);
+
+    for (let i = 0; i < chunks.length; i++) {
+      const vector = await this.getEmbedding(chunks[i].text);
+      points.push({
+        id: uuidv4(),
+        vector,
+        payload: {
+          ...basePayload,
+          chunk_type:      'transcript',
+          text_chunk:      chunks[i].text,
+          chunk_index:     i,
+          timestamp_start: chunks[i].charStart,
+        },
+      });
+    }
+
+    // ── Upsert in batches of 100 ────────────────────────────
     for (let i = 0; i < points.length; i += 100) {
       await this.qdrant.upsert(COLLECTION, {
         wait:   true,
@@ -71,7 +141,7 @@ export class EmbeddingService {
       });
     }
 
-    this.logger.log(`[${jobId}] Upserted ${points.length} vectors to Qdrant`);
+    this.logger.log(`[${jobId}] Upserted ${points.length} vectors (caption + description + transcript)`);
   }
 
   async updateJobStatus(jobId: string, status: string) {
@@ -82,8 +152,8 @@ export class EmbeddingService {
     const chunks: { text: string; charStart: number }[] = [];
     let start = 0;
     while (start < text.length) {
-      const end     = Math.min(start + CHUNK_SIZE, text.length);
-      const chunk   = text.slice(start, end).trim();
+      const end   = Math.min(start + CHUNK_SIZE, text.length);
+      const chunk = text.slice(start, end).trim();
       if (chunk) chunks.push({ text: chunk, charStart: start });
       start += CHUNK_SIZE - CHUNK_OVERLAP;
     }
@@ -91,22 +161,13 @@ export class EmbeddingService {
   }
 
   private async getEmbedding(text: string): Promise<number[]> {
-    const res  = await fetch('http://localhost:8001/embed', {
+    const url = process.env.EMBEDDING_SIDECAR_URL ?? 'http://localhost:8001';
+    const res  = await fetch(`${url}/embed`, {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
       body:    JSON.stringify({ text }),
     });
     const data = await res.json() as { embedding: number[] };
     return data.embedding;
-  }
-
-  private async getJobPlatform(jobId: string): Promise<string> {
-    const job = await this.jobRepo.findOne({ where: { id: jobId } });
-    if (!job) return 'other';
-    const url = job.url;
-    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
-    if (url.includes('instagram.com')) return 'instagram';
-    if (url.includes('twitter.com') || url.includes('x.com')) return 'twitter';
-    return 'other';
   }
 }

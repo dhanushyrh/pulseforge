@@ -7,6 +7,7 @@ import { Job } from 'bullmq';
 import { QUEUES, JOBS } from '@app/queue';
 import type { MetadataJobPayload, ClassifierJobPayload } from '@app/queue';
 import { MetadataService } from './metadata.service';
+import { CreatorService } from './creator.service';
 
 @Processor(QUEUES.METADATA, { concurrency: 2 })
 export class MetadataProcessor extends WorkerHost {
@@ -14,6 +15,7 @@ export class MetadataProcessor extends WorkerHost {
 
   constructor(
     private readonly metadataService: MetadataService,
+    private readonly creatorService:  CreatorService,
     @InjectQueue(QUEUES.CLASSIFIER)
     private readonly classifierQueue: Queue,
   ) {
@@ -30,6 +32,17 @@ export class MetadataProcessor extends WorkerHost {
 
       // Persist to DB
       await this.metadataService.persistMetadata(jobId, meta);
+
+      // Upsert creator profile
+      if (meta.creatorData) {
+        await this.creatorService.upsert(
+          meta.creatorData,
+          meta.country,
+          meta.contentType,
+          0.5,   // placeholder — classifier will update with final confidence
+          [],    // entities not yet available at this stage
+        );
+      }
 
       // Push to classifier
       const payload: ClassifierJobPayload = {

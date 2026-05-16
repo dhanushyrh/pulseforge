@@ -6,8 +6,27 @@ import { Job } from './entities/job.entity';
 import { MediaAsset } from './entities/media-asset.entity';
 import { Intelligence } from './entities/intelligence.entity';
 import { ContentInsights } from './entities/content-insights.entity';
+import { Creator } from './entities/creator.entity';
+import { User } from './entities/user.entity';
+import { InviteCode } from './entities/invite-code.entity';
+import { RefreshToken } from './entities/refresh-token.entity';
+import { IngestUsage } from './entities/ingest-usage.entity';
+import { Trip } from './entities/trip.entity';
+import { TripStop } from './entities/trip-stop.entity';
+import { AffiliateLink } from './entities/affiliate-link.entity';
+import { AffiliateClick } from './entities/affiliate-click.entity';
+import { AiUsage } from './entities/ai-usage.entity';
+import { PlaceDetails } from './entities/place-details.entity';
+import { PlaceCommunityNote } from './entities/place-community-note.entity';
+import { PlaceNoteAgree } from './entities/place-note-agree.entity';
 
-export const DB_ENTITIES = [Job, MediaAsset, Intelligence, ContentInsights];
+export const DB_ENTITIES = [
+  Job, MediaAsset, Intelligence, ContentInsights,
+  Creator, User, InviteCode, RefreshToken, IngestUsage,
+  Trip, TripStop, AffiliateLink, AffiliateClick,
+  AiUsage,
+  PlaceDetails, PlaceCommunityNote, PlaceNoteAgree,
+];
 
 @Module({
   imports: [

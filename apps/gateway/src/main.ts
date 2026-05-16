@@ -22,6 +22,7 @@ async function bootstrap() {
     .setTitle('PulseForge AI')
     .setDescription('Semantic memory for social content')
     .setVersion('1.0')
+    .addBearerAuth()
     .build();
   SwaggerModule.setup('api', app, SwaggerModule.createDocument(app, config));
 

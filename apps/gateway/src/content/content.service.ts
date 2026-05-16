@@ -2,7 +2,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Job, Intelligence, ContentInsights } from '@app/database';
+import { Job, Intelligence, ContentInsights, Creator } from '@app/database';
 import { ContentQueryDto } from './dto/content-query.dto';
 
 @Injectable()
@@ -14,6 +14,8 @@ export class ContentService {
     private readonly insightsRepo: Repository<ContentInsights>,
     @InjectRepository(Intelligence)
     private readonly intelRepo: Repository<Intelligence>,
+    @InjectRepository(Creator)
+    private readonly creatorRepo: Repository<Creator>,
   ) {}
 
   // ── List with filters + pagination ───────────────────────
@@ -153,28 +155,48 @@ export class ContentService {
     };
   }
 
-async getCreators() {
-  const rows = await this.jobRepo
-    .createQueryBuilder('job')
-    .select('job.creator',                  'creator')
-    .addSelect('COUNT(*)',                   'count')
-    .addSelect('AVG(job.travelConfidence)',  'avgConfidence')
-    .addSelect('array_agg(DISTINCT job.country) FILTER (WHERE job.country IS NOT NULL)', 'countries')
-    .addSelect('array_agg(DISTINCT job.contentType) FILTER (WHERE job.contentType IS NOT NULL)', 'contentTypes')
-    .where('job.creator IS NOT NULL')
-    .andWhere('job.isTravel = true')
-    .groupBy('job.creator')
-    .orderBy('count', 'DESC')
-    .getRawMany();
+  async getCreators() {
+    const creators = await this.creatorRepo.find({
+      where: { isActive: true },
+      order: { videoCount: 'DESC' },
+    });
+    return creators.map(this.formatCreator);
+  }
 
-  return rows.map(r => ({
-    creator:      r.creator,
-    count:        parseInt(r.count, 10),
-    avgConfidence: parseFloat(parseFloat(r.avgConfidence ?? '0').toFixed(2)),
-    countries:    r.countries   ?? [],
-    contentTypes: r.contentTypes ?? [],
-  }));
-}
+  async getCreatorByHandle(handle: string) {
+    const creator = await this.creatorRepo.findOne({ where: { handle } });
+    if (!creator) return null;
+
+    const jobs = await this.jobRepo.find({
+      where: { creator: handle, isTravel: true },
+      order: { createdAt: 'DESC' },
+    });
+
+    return {
+      ...this.formatCreator(creator),
+      videos: jobs.map(this.formatItem),
+    };
+  }
+
+  private formatCreator(c: Creator) {
+    return {
+      id:                  c.id,
+      handle:              c.handle,
+      displayName:         c.displayName         ?? null,
+      platform:            c.platform,
+      profileUrl:          c.profileUrl          ?? null,
+      bio:                 c.bio                 ?? null,
+      avatarUrl:           c.avatarUrl           ?? null,
+      videoCount:          c.videoCount          ?? 0,
+      avgCommentCount:     c.avgCommentCount      ?? null,
+      avgTravelConfidence: c.avgTravelConfidence  ?? 0,
+      topCountries:        c.topCountries        ?? [],
+      contentTypes:        c.contentTypes        ?? [],
+      topEntities:         c.topEntities         ?? [],
+      createdAt:           c.createdAt.toISOString(),
+      updatedAt:           c.updatedAt.toISOString(),
+    };
+  }
 
   // ── Format helper ────────────────────────────────────────
   private formatItem(job: Job) {

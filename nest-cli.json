@@ -126,6 +126,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/worker-transcript/tsconfig.app.json"
       }
+    },
+    "worker-geocode": {
+      "type": "application",
+      "root": "apps/worker-geocode",
+      "entryFile": "main",
+      "sourceRoot": "apps/worker-geocode/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/worker-geocode/tsconfig.app.json"
+      }
     }
   }
 }

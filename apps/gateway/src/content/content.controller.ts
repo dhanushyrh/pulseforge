@@ -42,9 +42,18 @@ export class ContentController {
   }
 
   @Get('creators')
-  @ApiOperation({ summary: 'All creators with content counts' })
+  @ApiOperation({ summary: 'All creators ordered by video count' })
   async getCreators() {
     return this.contentService.getCreators();
+  }
+
+  @Get('creators/:handle')
+  @ApiOperation({ summary: 'Creator profile + their videos' })
+  async getCreatorByHandle(@Param('handle') handle: string) {
+    const decoded = decodeURIComponent(handle);
+    const creator = await this.contentService.getCreatorByHandle(decoded);
+    if (!creator) throw new NotFoundException(`Creator ${decoded} not found`);
+    return creator;
   }
 
   @Get(':jobId')

@@ -16,6 +16,17 @@ export interface VideoChapter {
   endTime:   number;
 }
 
+export interface CreatorData {
+  handle:       string;
+  displayName:  string | null;
+  platform:     string;
+  platformId:   string | null;
+  profileUrl:   string | null;
+  bio:          string | null;
+  avatarUrl:    string | null;
+  commentCount: number | null;
+}
+
 export interface ExtractedMetadata {
   caption:     string | null;
   description: string | null;
@@ -30,6 +41,7 @@ export interface ExtractedMetadata {
   thumbnail:   string | null;
   viewCount:   number | null;
   uploadDate:  string | null;
+  creatorData: CreatorData | null;
 }
 
 @Injectable()
@@ -125,12 +137,12 @@ export class MetadataService {
     // Description — full text body
     const description = meta.description ?? null;
 
-    // Creator handle
-    const creator = meta.uploader_id
-      ? (meta.uploader_id.startsWith('@') ? meta.uploader_id : `@${meta.uploader_id}`)
-      : meta.uploader
-      ?? meta.channel
-      ?? null;
+    // Creator handle — prefer channel (username) over numeric uploader_id
+    const rawHandle   = meta.channel ?? meta.uploader_id ?? null;
+    const handle      = rawHandle ? `@${String(rawHandle).replace(/^@/, '')}` : null;
+
+    // For backwards compat, store handle as the creator field on the job
+    const creator = handle;
 
     // Country — yt-dlp sometimes provides this directly
     const rawCountry = meta.location
@@ -147,6 +159,27 @@ export class MetadataService {
 
     const tags: string[] = (meta.tags ?? []).slice(0, 30).map(String);
 
+    // ── Creator profile data ─────────────────────────────
+    const platformId  = meta.uploader_id ? String(meta.uploader_id) : null;
+    const displayName = meta.uploader ?? meta.channel ?? null;
+    const profileUrl  = this.buildProfileUrl(platform, meta.channel, platformId);
+    const avatarUrl   = meta.thumbnail ?? null;
+    const bio         = this.extractBio(meta.description);
+    const commentCount = (meta.comment_count != null && meta.comment_count > 0)
+      ? meta.comment_count
+      : null;
+
+    const creatorData: CreatorData | null = handle ? {
+      handle,
+      displayName,
+      platform,
+      platformId,
+      profileUrl,
+      bio,
+      avatarUrl,
+      commentCount,
+    } : null;
+
     return {
       caption:     this.truncate(caption, 500),
       description: this.truncate(description, 2000),
@@ -161,6 +194,7 @@ export class MetadataService {
       thumbnail:   meta.thumbnail ?? null,
       viewCount:   meta.view_count ?? null,
       uploadDate:  meta.upload_date ?? null,
+      creatorData,
     };
   }
 
@@ -291,7 +325,27 @@ export class MetadataService {
       thumbnail:   null,
       viewCount:   null,
       uploadDate:  null,
+      creatorData: null,
     };
+  }
+
+  private buildProfileUrl(
+    platform: string,
+    channel:  string | null | undefined,
+    platformId: string | null,
+  ): string | null {
+    if (platform === 'instagram' && channel) return `https://instagram.com/${channel}`;
+    if (platform === 'youtube'   && platformId) return `https://youtube.com/@${platformId}`;
+    if (platform === 'tiktok'    && channel) return `https://tiktok.com/@${channel}`;
+    if (platform === 'twitter'   && channel) return `https://twitter.com/${channel}`;
+    return null;
+  }
+
+  private extractBio(description: string | null | undefined): string | null {
+    if (!description) return null;
+    const firstLine = description.split('\n').find(l => l.trim().length > 0);
+    if (!firstLine) return null;
+    return firstLine.trim().slice(0, 300);
   }
 
   private truncate(str: string | null, max: number): string | null {

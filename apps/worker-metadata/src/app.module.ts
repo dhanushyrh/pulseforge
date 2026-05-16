@@ -7,6 +7,7 @@ import { DatabaseModule, DB_ENTITIES } from '@app/database';
 import { QUEUES } from '@app/queue';
 import { MetadataService } from './metadata.service';
 import { MetadataProcessor } from './metadata.processor';
+import { CreatorService } from './creator.service';
 
 @Module({
   imports: [
@@ -24,6 +25,6 @@ import { MetadataProcessor } from './metadata.processor';
     DatabaseModule,
     TypeOrmModule.forFeature(DB_ENTITIES),
   ],
-  providers: [MetadataService, MetadataProcessor],
+  providers: [MetadataService, MetadataProcessor, CreatorService],
 })
 export class AppModule {}

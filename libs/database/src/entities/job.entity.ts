@@ -1,10 +1,17 @@
 // libs/database/src/entities/job.entity.ts
 import {
-  Entity, PrimaryGeneratedColumn, Column,
+  Entity, PrimaryGeneratedColumn, Column, Index,
   CreateDateColumn, UpdateDateColumn
 } from 'typeorm';
 
 @Entity('jobs')
+@Index('idx_jobs_user_id',     ['userId'])
+@Index('idx_jobs_creator',     ['creator'])
+@Index('idx_jobs_country',     ['country'])
+@Index('idx_jobs_is_travel',   ['isTravel'])
+@Index('idx_jobs_user_travel', ['userId', 'isTravel'])
+@Index('idx_jobs_status',      ['status'])
+@Index('idx_jobs_created',     ['createdAt'])
 export class Job {
   @PrimaryGeneratedColumn('uuid')
   id: string;

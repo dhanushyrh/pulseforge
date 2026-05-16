@@ -56,6 +56,7 @@ export class ClassifierProcessor extends WorkerHost {
         description: job.data.description ?? null,
         creator:     job.data.creator     ?? null,
         country:     job.data.country     ?? null,
+        countryCode: job.data.countryCode ?? null,
         contentType: job.data.contentType,
       };
       await this.transcriptQueue.add(JOBS.TRANSCRIPT, payload, {
